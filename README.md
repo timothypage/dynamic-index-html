@@ -21,6 +21,7 @@ This template does not include any kind of persistence (database). For more adva
 ### Deployment
 
 ```
+$ serverless create_domain
 $ serverless deploy
 ```
 
