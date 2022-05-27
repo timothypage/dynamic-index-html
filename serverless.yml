@@ -1,0 +1,54 @@
+service: dynamic-index-html
+frameworkVersion: '3'
+
+plugins:
+  - serverless-domain-manager
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+  stackName: tz-${self:provider.stage}-${self:service}
+
+package:
+  individually: true
+  exclude:
+    - .git/**
+    - functions/**
+    - layers/**
+    - node_modules/** # this should only contain local serverless plugin stuff anyway
+    - keycloaktoken/**
+    - ./*.yml
+    - ./*.json
+    - ./*.md
+  include:
+    - package.json
+
+custom:
+  # environment: ${file(./environment.yml):${self:provider.stage}}
+  # namespace: geoplatform # Used to tag resources with a "Namespace".
+  # namespaceShort: gp # Used to prefix stack name, deployment bucket, resource "Name" tags, etc.
+
+  scripts:
+    hooks:
+      "package:initialize": npx recursive-install --skip-root --production
+
+  customDomain:
+    domainName: tz.geoplatform.info
+    stage: ${self:provider.stage}
+    certificateArn: arn:aws:acm:us-east-1:998343784597:certificate/4df15e59-c621-4bab-ae7c-76b10234bdb4
+    endpointType: 'regional'
+    apiType: http
+
+
+functions:
+  hello:
+    handler: functions/index-generator/handler.hello
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: get
+    package:
+      include:
+        - functions/index-generator/**
